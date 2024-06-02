@@ -9,6 +9,7 @@ library(bs4Dash)
 library(shinyWidgets)
 library(stringr)
 library(tibble)
+library(purrr)
 
 
 # Data --------------------------------------------------------------------
@@ -105,6 +106,11 @@ SERVER <- function(input, output, session){
     timestamp = ymd_hms(character())
   ))
   
+  data_p <- reactive({
+    r$product_data |>
+      mutate(p_id = pmap_chr(across(everything()), ~ paste(..., sep = "_"))) 
+  })
+  
   # Module
   
   product_server("add_product", r)
@@ -113,7 +119,7 @@ SERVER <- function(input, output, session){
   # output
   output$products_table <- renderReactable({
     req(nrow(r$product_data) > 0)
-    r$product_data |>
+    data_p() |>
       reactable()
   })
   
