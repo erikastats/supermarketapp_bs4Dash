@@ -61,11 +61,8 @@ BODY  = dashboardBody(
              box(width = 12,
                   fluidRow(
                    column(6,
-                          actionBttn(
-                            inputId = "add_product",
-                            label = "Add product",
-                            icon = icon("plus")
-                          )),
+                          product_ui("add_product")
+                          ),
                    column(6,
                           actionBttn(
                             inputId = "exclude_product",
@@ -75,9 +72,8 @@ BODY  = dashboardBody(
                  ),
                  hr(),
                  br(),
-                 reactableOutput("products_table", 
-                                 width = 12 )
-              
+                 reactableOutput("products_table")
+                 
                  )
              ),
     tabItem( tabName = "g_register"),
@@ -100,14 +96,26 @@ UI = dashboardPage(
 SERVER <- function(input, output, session){
   
   # reactive values
-  product_reactive <-  reactive({
-    product_df
-  })
+  
+  r <- reactiveValues(product_data = tibble(
+    product_name = character(),
+    product_category = character(),
+    product_subcategory = character(),
+    product_is_favorite = logical(),
+    timestamp = ymd_hms(character())
+  ))
   
   # Module
   
+  product_server("add_product", r)
   # Events
   
+  # output
+  output$products_table <- renderReactable({
+    req(nrow(r$product_data) > 0)
+    r$product_data |>
+      reactable()
+  })
   
 }
 

@@ -2,6 +2,8 @@ library(shiny)
 library(shinyWidgets)
 library(dplyr)
 library(DT)
+library(tibble)
+library(lubridate)
 
 
 ui <- fluidPage(
@@ -10,12 +12,12 @@ ui <- fluidPage(
 )
 
 server <- function(input, output, session) {
-  r <- reactiveValues(product_data = data.frame(
+  r <- reactiveValues(product_data = tibble(
     product_name = character(),
     product_category = character(),
     product_subcategory = character(),
     product_is_favorite = logical(),
-    stringsAsFactors = FALSE
+    timestamp = ymd_hms(character())
   ))
   
   product_server("product_r", r)
