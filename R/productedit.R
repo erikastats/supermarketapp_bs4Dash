@@ -2,7 +2,7 @@
 
 # UI module ---------------------------------------------------------------
 
-product_ui <- function(id){
+product_exclude_ui <- function(id){
   ns <- NS(id)
   tagList(
     br(),
@@ -20,7 +20,7 @@ product_ui <- function(id){
 
 # Server module -----------------------------------------------------------
 
-product_server <- function(id, r, df){
+product_exclude_server <- function(id, r, df){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     

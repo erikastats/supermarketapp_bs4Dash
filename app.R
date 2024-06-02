@@ -65,11 +65,8 @@ BODY  = dashboardBody(
                           product_ui("add_product")
                           ),
                    column(6,
-                          actionBttn(
-                            inputId = "exclude_product",
-                            label = "Exclude product",
-                            icon = icon("minus")
-                          ))
+                          product_exclude_ui("exclude_product")
+                          )
                  ),
                  hr(),
                  br(),
@@ -103,8 +100,10 @@ SERVER <- function(input, output, session){
     product_category = character(),
     product_subcategory = character(),
     product_is_favorite = logical(),
-    timestamp = ymd_hms(character())
+    last_update = ymd_hms(character())
   ))
+  
+  r2 <- reactiveValues( product_deleted = character())
   
   data_p <- reactive({
     r$product_data |>
@@ -114,6 +113,8 @@ SERVER <- function(input, output, session){
   # Module
   
   product_server("add_product", r)
+  
+  product_server("exclude_product", r2)
   # Events
   
   # output
