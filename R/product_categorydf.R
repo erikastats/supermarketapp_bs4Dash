@@ -20,12 +20,13 @@ product_category <- tibble(
                     "Cooking Sauces", "Condiments & Table Sauces", "Pickles, Chutneys & Olives",
                     "Bakins, Desserts & Spreads", "Biscuits", "Chocolate", 
                     "Sweets, Mints & Chewing Gum", "Sugar & Sweeteners", "Crisps, nuts and Popcorn",
-                    "Breakfast Cereals", "Tea & Coffee", "Hot Chocolate & Malted Drinks" )
+                    "Breakfast Cereals", "Tea & Coffee", "Hot Chocolate & Malted Drinks",
+                    "Tofu")
   )) |>
   bind_rows(tibble(
     category = c("Drinks"),
     subcategory = c("Water", "Adult soft Drinks", "Juice", "Mixers, Tonic and Soda Water",
-                    "Sports and Energy Drinks", "Beer & Cider", "Wine")
+                    "Sports and Energy Drinks", "Beer & Cider", "Wine", "Vegan Milk")
   )) |>
   bind_rows(tibble(
     category = c("Health & Beauty"),
@@ -38,7 +39,8 @@ product_category <- tibble(
     category = c("Househould"),
     subcategory = c("Cleaning", "Dishwashers & Washing up", "Food Storage", 
                     "Home Fragrance", "Household Sundries", "Laundy", 
-                    "Toilet Paper, Kitchen Rolls & Tissues", "Cleanning Tools & Gloves")
+                    "Toilet Paper, Kitchen Rolls & Tissues", "Cleanning Tools & Gloves",
+                    "Forniture")
   )) |>
   bind_rows(tibble(
     category = c("Home & Living"),
@@ -52,4 +54,9 @@ product_category <- tibble(
     subcategory = c("Frozen Ice Cream & Desserts", "Frozen Fruit & Ice Cubes",
                     "Frozen Meals, Pizza", "Frozen Chips, Potatoes & Onion Rings",
                     "Frozen Vegetables")
+  )) |>
+  bind_rows(tibble(
+    category = c("Clothes"),
+    subcategory = c("Men", "Women",
+                    "Kids")
   ))

@@ -17,8 +17,7 @@ library(shinyFiles)
 
 # Data --------------------------------------------------------------------
 
-product_df <- tibble(p_name = NULL, type = NULL, subtype = NULL,
-                     is_favorite = NULL)
+product_df <- readRDS("./Data/product_table.rds")
 
 
 
@@ -105,8 +104,10 @@ SERVER <- function(input, output, session){
   r2 <- reactiveValues( product_deleted = character())
   
   data_p <- reactive({
-    r$product_data |>
-      mutate(p_id = pmap_chr(across(everything()), ~ paste(..., sep = "_"))) |>
+    product_df |> 
+      bind_rows( r$product_data |>
+                  mutate(p_id = pmap_chr(across(everything()),
+                                         ~ paste(..., sep = "_"))) ) |>
       filter(!(p_id %in% r2$product_deleted) )
   })
   
@@ -120,7 +121,7 @@ SERVER <- function(input, output, session){
   
   # output
   output$products_table <- renderReactable({
-    req(nrow(r$product_data) > 0)
+    req(nrow(data_p()) > 0)
     data_p() |>
       arrange(desc(last_update)) |>
       select(-p_id, -product_is_favorite) |>

@@ -101,7 +101,7 @@ product_server <- function(id, r){
       
       # Update the reactive data frame in the main app
       new_row <- tibble(
-        product_name = input$p_name,
+        product_name = input$p_name |> str_to_upper(),
         product_category = input$p_category2,
         product_subcategory = input$p_subcategory2,
         product_is_favorite = input$p_favorite,

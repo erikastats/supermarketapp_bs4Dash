@@ -7,7 +7,7 @@ save_table_ui <- function(id){
     br(),
     actionBttn(ns("save"),
                label = "Save table",
-               icon = icon("floppy-o")),
+               icon = icon("floppy-disk")),
     useSweetAlert()
   )
 }
