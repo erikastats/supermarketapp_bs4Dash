@@ -1,3 +1,5 @@
+library(dplyr)
+
 product_category <- tibble(
   category = c("Fresh Food"),
   subcategory = c("Fresh fruit", "Fresh Vegetables",

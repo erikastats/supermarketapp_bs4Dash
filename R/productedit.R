@@ -20,76 +20,64 @@ product_exclude_ui <- function(id){
 
 # Server module -----------------------------------------------------------
 
-product_exclude_server <- function(id, r, df){
+product_exclude_server <- function(id, r2, data_p){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
-    product_id <- reactiveVal({
-      df$product_data |>
-        pull(p_id) |>
-        unique()
-    })
+
     
     # Observers
+    # observeEvent(input$exclude_product, {
+    #   showModal(modalDialog(
+    #     title = "",
+    #     fluidRow(
+    #              h2("Exclude a product")
+    #     ),
+    #     column(width = 12,
+    #            br(),
+    #            uiOutput(ns("p_exclude")),
+    #            br(),
+    #            textOutput(ns("product_to_exclude"))),
+    #     footer = tagList(
+    #       modalButton("Close"),
+    #       actionButton(ns("p_del"), "product_exclude_ui")
+    #     )
+    #   ))
+    # })
+    
     observeEvent(input$exclude_product, {
       showModal(modalDialog(
-        title = "",
-        fluidRow(
-                 h2("Exclude a product")
-        ),
-        column(width = 12,
-               br(),
-               uiOutput(ns("p_exclude")),
-               br(),
-               textOutput(ns("product_to_exclude"))),
+        title = "Exclude product",
+        selectInput(ns("p_name"), "Select product to exclude:", choices = data_p()$p_id),
         footer = tagList(
           modalButton("Close"),
-          actionButton(ns("p_del"), "Delect product")
+          actionButton(ns("p_confirm"), "Confirm Exclusion")
         )
       ))
     })
     
 
     
-    all_fields_filled <- reactive({
-      !is.null(input$product_exclude) && input$product_exclude != ""
-    })
-    
-    observe({
-      toggleState <- all_fields_filled()
-      updateActionButton(session, ns("p_del"), disabled = !toggleState)
-    })
-    
-    observeEvent(input$p_del, {
+    observeEvent(input$p_confirm, {
+      product_to_exclude <- input$p_name
+      r2$product_deleted <- c(r2$product_deleted, product_to_exclude)
+      
+      removeModal()
+      
       sendSweetAlert(
         session = session,
-        title = "Deleted!",
-        text = "Product deleted",
-        type = "error"
-      )
-      
-      r$product_deleted <- input$product_exclude
-      
-    })
-    
-
-    
-    # Outputs
-    output$p_exclude <- renderUI({
-      pickerInput(
-        inputId = ns("product_exclude"),
-        label = "Select product id to be deleted",
-        choices = product_id(),
-        selected = NULL,
-        multiple = TRUE
+        title = "Success!",
+        text = paste("Product", product_to_exclude, "excluded successfully!"),
+        type = "success"
       )
     })
     
-    output$product_to_exclude <- renderText({
-      paste0("Product deleted: ",
-             (paste(input$product_exclude, sep = ", ")) )
-    })
     
+    # output$product_to_exclude <- renderText({
+    #   paste0("Product deleted: ",
+    #          (paste(input$product_exclude, sep = ", ")) )
+    # })
+    # 
     
   })
 }

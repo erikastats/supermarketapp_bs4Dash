@@ -1,4 +1,4 @@
-
+library(lubridate)
 
 # UI module ---------------------------------------------------------------
 
@@ -28,12 +28,14 @@ product_server <- function(id, r){
     category_choices <- reactiveVal({
       product_category |>
         pull(category) |>
+        sort() |>
         unique()
     })
     
     subcategory_choices <- reactiveVal({
       product_category |>
         pull(subcategory) |>
+        sort() |>
         unique()
     })
     
@@ -73,6 +75,7 @@ product_server <- function(id, r){
       newValue <- product_category |>
         filter(category == input$p_category2) |>
         pull(subcategory) |>
+        sort() |>
         unique()
       subcategory_choices(newValue)
     })

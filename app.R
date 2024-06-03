@@ -10,6 +10,8 @@ library(shinyWidgets)
 library(stringr)
 library(tibble)
 library(purrr)
+library(lubridate)
+
 
 
 # Data --------------------------------------------------------------------
@@ -61,12 +63,13 @@ BODY  = dashboardBody(
              br(),
              box(width = 12,
                   fluidRow(
-                   column(6,
+                   column(4,
                           product_ui("add_product")
                           ),
-                   column(6,
+                   column(4,
                           product_exclude_ui("exclude_product")
-                          )
+                          ),
+                   column(4)
                  ),
                  hr(),
                  br(),
@@ -107,21 +110,40 @@ SERVER <- function(input, output, session){
   
   data_p <- reactive({
     r$product_data |>
-      mutate(p_id = pmap_chr(across(everything()), ~ paste(..., sep = "_"))) 
+      mutate(p_id = pmap_chr(across(everything()), ~ paste(..., sep = "_"))) |>
+      filter(!(p_id %in% r2$product_deleted) )
   })
   
-  # Module
+  # Modules
+  
   
   product_server("add_product", r)
-  
-  product_server("exclude_product", r2)
+  product_exclude_server("exclude_product", r2, reactive({data_p()}))
   # Events
   
   # output
   output$products_table <- renderReactable({
     req(nrow(r$product_data) > 0)
     data_p() |>
-      reactable()
+      arrange(desc(last_update)) |>
+      select(-p_id, -product_is_favorite) |>
+      reactable(
+        searchable = TRUE,
+        highlight = TRUE,
+        paginationType = "simple",
+        minRows = 10,
+        defaultColDef = colDef(headerClass = "header", align = "left",
+                               minWidth = 100,
+                               headerStyle = list(fontWeight = "bold"),
+                               footerStyle = list(fontWeight = "bold")),
+        columns = list(
+          product_name = colDef( name = "Product Name"),
+          product_category = colDef(name = "Category"),
+          product_subcategory = colDef(name = "Subcategory"),
+          last_update = colDef(name = "Updated in")
+        )
+        
+      )
   })
   
 }
