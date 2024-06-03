@@ -11,6 +11,7 @@ library(stringr)
 library(tibble)
 library(purrr)
 library(lubridate)
+library(shinyFiles)
 
 
 
@@ -63,18 +64,13 @@ BODY  = dashboardBody(
              br(),
              box(width = 12,
                   fluidRow(
-                   column(4,
-                          product_ui("add_product")
-                          ),
-                   column(4,
-                          product_exclude_ui("exclude_product")
-                          ),
-                   column(4)
+                   column( 4, product_ui("add_product") ),
+                   column( 4, product_exclude_ui("exclude_product") ),
+                   column( 4, save_table_ui("save_product_table") )
                  ),
                  hr(),
                  br(),
                  reactableOutput("products_table")
-                 
                  )
              ),
     tabItem( tabName = "g_register"),
@@ -119,6 +115,7 @@ SERVER <- function(input, output, session){
   
   product_server("add_product", r)
   product_exclude_server("exclude_product", r2, reactive({data_p()}))
+  save_table_server("save_product_table", reactive({data_p()}))
   # Events
   
   # output
