@@ -72,7 +72,18 @@ BODY  = dashboardBody(
                  reactableOutput("products_table")
                  )
              ),
-    tabItem( tabName = "g_register"),
+    tabItem( tabName = "g_register",
+             h2("Grocery registration"),
+             h4("Here you´ll be able to register the grocery shop made at any time."),
+             br(),
+             br(),
+             box(width = 12,
+                 product_register_ui("product_gro") 
+                 ),
+             hr(),
+             br(),
+             reactableOutput("grocery_table")
+             ),
     tabItem( tabName = "analysis")
   )
 )
@@ -103,6 +114,17 @@ SERVER <- function(input, output, session){
   
   r2 <- reactiveValues( product_deleted = character())
   
+  r3 <- reactiveValues(gro_products = tibble(
+    grocery_day = ymd(character()),
+    supermarket_name = character(),
+    product_name = character(),
+    product_category = character(),
+    product_value = double(),
+    product_quantity = integer(),
+    product_discount = double(),
+    last_update_grocery = ymd_hms(character())
+  ))
+  
   data_p <- reactive({
     product_df |> 
       bind_rows( r$product_data |>
@@ -117,6 +139,8 @@ SERVER <- function(input, output, session){
   product_server("add_product", r)
   product_exclude_server("exclude_product", r2, reactive({data_p()}))
   save_table_server("save_product_table", reactive({data_p()}))
+  product_register_server("product_gro", r3, reactive({data_p()}))
+  
   # Events
   
   # output
