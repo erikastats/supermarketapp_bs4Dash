@@ -5,15 +5,14 @@ supermarkets_choices <- supermarkets |>
 
 # UI module ---------------------------------------------------------------
 
-product_register_ui <- function(id){
+grocery_ui <- function(id){
   ns <- NS(id)
   tagList(
-    box(width = 12,
         fluidRow(
           column(6,
                  airDatepickerInput(
             inputId = ns("grocery_date"),
-            label = "Date of the grocery",
+            label = "Select a purchase date",
             inline = TRUE )
           ),
           column(6, 
@@ -29,7 +28,7 @@ product_register_ui <- function(id){
                  uiOutput(ns("p_name")),
                  uiOutput(ns("p_category")),
                  numericInput(ns("product_value"),
-                              label = "Product value",
+                              label = "Price per unit",
                               value = 0),
                 
                  sliderInput(ns("product_quantity"),
@@ -44,14 +43,14 @@ product_register_ui <- function(id){
         ),
         actionBttn(ns("save"),
                    "Save product")
-        ))
+        )
   )
 }
 
 
 # SERVER module -----------------------------------------------------------
 
-product_register_server <- function(id, r, data) {
+grocery_server <- function(id, r, data) {
   moduleServer(id, function(input, output, session) {
     
     ns <- session$ns
@@ -120,6 +119,8 @@ product_register_server <- function(id, r, data) {
     #' create value box with count of groceries registered
     #' create value box with the newest and oldest date of groceries registered
     #' think on a third value box
+    #' create a module to print table
+    #' improve the distribution of the buttons
     
   })
 }

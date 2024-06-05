@@ -19,7 +19,16 @@ library(shinyFiles)
 
 product_df <- readRDS("./Data/product_table.rds")
 
-
+grocery_df <- tibble(
+  grocery_day = ymd(character()),
+  supermarket_name = character(),
+  product_name = character(),
+  product_category = character(),
+  product_value = double(),
+  product_quantity = integer(),
+  product_discount = double(),
+  last_update_grocery = ymd_hms(character())
+)
 
 # Header ------------------------------------------------------------------
 
@@ -78,7 +87,7 @@ BODY  = dashboardBody(
              br(),
              br(),
              box(width = 12,
-                 product_register_ui("product_gro") 
+                 grocery_ui("product_gro") 
                  ),
              hr(),
              br(),
@@ -133,13 +142,23 @@ SERVER <- function(input, output, session){
       filter(!(p_id %in% r2$product_deleted) )
   })
   
+  data_grocery <- reactive({
+    grocery_df |>
+      bind_rows(r3  |>
+                  mutate(g_id = pmap_chr(across(everything()),
+                                         ~ paste(..., sep = "_")))
+                ) |>
+      mutate(value_total = (product_value - product_discount)*product_quantity)
+      
+  })
+  
   # Modules
   
   
   product_server("add_product", r)
   product_exclude_server("exclude_product", r2, reactive({data_p()}))
   save_table_server("save_product_table", reactive({data_p()}))
-  product_register_server("product_gro", r3, reactive({data_p()}))
+  grocery_server("product_gro", r3, reactive({data_p()}))
   
   # Events
   
@@ -163,6 +182,36 @@ SERVER <- function(input, output, session){
           product_category = colDef(name = "Category"),
           product_subcategory = colDef(name = "Subcategory"),
           last_update = colDef(name = "Updated in")
+        )
+        
+      )
+  })
+  
+  
+  output$grocery_table <- renderReactable({
+    req(nrow(data_grocery()) > 0)
+    data_grocery() |>
+      arrange(desc(last_update)) |>
+      select(-g_id) |>
+      reactable(
+        searchable = TRUE,
+        highlight = TRUE,
+        paginationType = "simple",
+        minRows = 10,
+        defaultColDef = colDef(headerClass = "header", align = "left",
+                               minWidth = 100,
+                               headerStyle = list(fontWeight = "bold"),
+                               footerStyle = list(fontWeight = "bold")),
+        columns = list(
+          grocery_day = colDef(name = "Purchase Date"),
+          supermarket_name = colDef(name = "Supermarket"),
+          product_name = colDef( name = "Product Name"),
+          product_category = colDef(name = "Category"),
+          product_value = colDef(name = "Price per unit"),
+          product_quantity = colDef(name = "Quantity"),
+          product_discount = colDef(name = "Discount"),
+          value_total = colDef(name = "Total Cost"),
+          last_update_grocery = colDef(name = "Updated in")
         )
         
       )
