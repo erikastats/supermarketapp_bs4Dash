@@ -1,3 +1,4 @@
+source("./R/supermarkets_df.R")
 
 supermarkets_choices <- supermarkets |>
   pull(supermarket_name) |>

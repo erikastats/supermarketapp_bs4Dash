@@ -19,16 +19,8 @@ library(shinyFiles)
 
 product_df <- readRDS("./Data/product_table.rds")
 
-grocery_df <- tibble(
-  grocery_day = ymd(character()),
-  supermarket_name = character(),
-  product_name = character(),
-  product_category = character(),
-  product_value = double(),
-  product_quantity = integer(),
-  product_discount = double(),
-  last_update_grocery = ymd_hms(character())
-)
+grocery_df <- readRDS("./Data/grocery_table.rds")
+
 
 # Header ------------------------------------------------------------------
 
