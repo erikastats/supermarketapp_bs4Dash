@@ -15,19 +15,19 @@ save_table_ui <- function(id){
 
 # SERVER module -----------------------------------------------------------
 
-save_table_server <- function(id, data) {
+save_table_server <- function(id, data, path_data, type) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
     observeEvent(input$save, {
-      
+      # "./Data/product_table.rds"
       data() |>
-        saveRDS("./Data/product_table.rds")
+        saveRDS(path_data)
       
       sendSweetAlert(
         session = session,
         title = "Table saved!",
-        text = "Your product table was saved and updated successfully!",
+        text = paste0("Your ", str_to_lower(type) , " table was saved and updated successfully!"),
         type = "info"
       )
       

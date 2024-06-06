@@ -9,24 +9,26 @@ grocery_ui <- function(id){
   ns <- NS(id)
   tagList(
         fluidRow(
-          column(6,
+          column(4,
                  airDatepickerInput(
             inputId = ns("grocery_date"),
             label = "Select a purchase date",
+            maxDate = now(),
             inline = TRUE )
           ),
-          column(6, 
-                 radioGroupButtons(
-                   inputId = "supermarket_chosen",
-                   label = "Select a supermarket",
+          column(4,
+                 pickerInput(
+                   inputId = ns("supermarket_chosen"),
+                   label = "Select a supermarket", 
                    choices = supermarkets_choices,
-                   selected = "Tesco",
-                   justified = TRUE,
-                   checkIcon = list(
-                     yes = icon("ok", 
-                                lib = "glyphicon")) ),
+                   selected = 'Tesco', 
+                   options = list(
+                     title = "Select a supermarket",
+                     `live-search` = TRUE )
+                 ),
                  uiOutput(ns("p_name")),
-                 uiOutput(ns("p_category")),
+                 uiOutput(ns("p_category"))),
+          column(4,
                  numericInput(ns("product_value"),
                               label = "Price per unit",
                               value = 0),
@@ -42,7 +44,8 @@ grocery_ui <- function(id){
                  
         ),
         actionBttn(ns("save"),
-                   "Save product")
+                   "Add product",
+                   icon = icon("plus"))
         )
   )
 }
@@ -78,6 +81,8 @@ grocery_server <- function(id, r, data) {
     })
     
     output$p_category <- renderUI({
+      req(input$product_name) 
+      
       category_choices = product_choices() |>
         filter(product_name == input$product_name) |>
         pull(product_category)
