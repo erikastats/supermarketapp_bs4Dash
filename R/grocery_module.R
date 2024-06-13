@@ -1,3 +1,6 @@
+library(dplyr)
+library(shinyjs)
+
 source("./R/supermarkets_df.R")
 
 supermarkets_choices <- supermarkets |>
@@ -9,6 +12,7 @@ supermarkets_choices <- supermarkets |>
 grocery_ui <- function(id){
   ns <- NS(id)
   tagList(
+    useShinyjs(),
         fluidRow(
           column(4,
                  airDatepickerInput(
@@ -36,7 +40,7 @@ grocery_ui <- function(id){
                 
                  sliderInput(ns("product_quantity"),
                               "Product quantity",
-                             min = 1, max = 50,
+                             min = 1, max = 30,
                               value = 1),
                  numericInput(ns("product_discount"),
                               label = "Product discount",
@@ -44,9 +48,14 @@ grocery_ui <- function(id){
                  
                  
         ),
-        actionBttn(ns("save"),
-                   "Add product",
-                   icon = icon("plus"))
+        fluidRow(
+          actionBttn(ns("save"),
+                     "Add product",
+                     icon = icon("plus")),
+                 textOutput(ns("new_product")))
+          
+        
+        
         )
   )
 }
@@ -97,9 +106,22 @@ grocery_server <- function(id, r, data) {
         )
     })
     
+    output$new_product <- renderText({
+      paste0("Date: ", input$grocery_date, " Supermarket: ", input$supermarket_chosen,
+             "Product: ", input$product_name, "Value per unit: ", input$product_value,
+             "Quantity: ", input$product_quantity, "Discount: ", input$product_discount)
+    }) |>
+      bindEvent(input$save)
+    
+    
     # Observe
     
     observeEvent(input$save, {
+      
+      req(input$grocery_date, input$supermarket_chosen,
+          input$product_name, input$product_category,
+          input$product_value, input$product_quantity, 
+          input$product_discount)
       
       # Update the reactive data frame in the main app
       new_row <- tibble(

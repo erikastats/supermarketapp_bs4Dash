@@ -27,9 +27,15 @@ product_exclude_server <- function(id, r, Choices){
     observeEvent(input$exclude_product, {
       showModal(modalDialog(
         title = "Exclude product",
-        selectInput(ns("p_name"),
+        pickerInput(ns("p_name"),
                     "Select product to exclude:",
-                    choices = Choices()),
+                    choices = Choices(),
+                    multiple = TRUE,
+                    options = list(
+                      `live-search` = TRUE)
+                    
+                    ),
+        easyClose = TRUE,
         footer = tagList(
           actionButton(ns("p_confirm"), "Confirm Exclusion")
         )

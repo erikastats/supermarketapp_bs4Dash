@@ -14,7 +14,7 @@ library(lubridate)
 library(shinyFiles)
 
 
-
+ 
 # Data --------------------------------------------------------------------
 
 product_df <- readRDS("./Data/product_table.rds")
@@ -82,12 +82,8 @@ BODY  = dashboardBody(
                  grocery_ui("product_gro") 
                  ),
              br(),
-             fluidRow(
-               bs4InfoBoxOutput("latest_purchase"),
-               bs4InfoBoxOutput("count_of_purchases"),
-               bs4InfoBoxOutput("added_products")
-             ),
-             box(width = 12,
+             grocery_infobox_ui('info_grocery'),
+             box(width = 12,title = "New grocery product",
                  fluidRow(save_table_ui("save_grocery_table"),
                           product_exclude_ui("exclude_product_grocery")),
                  hr(),
@@ -171,6 +167,7 @@ SERVER <- function(input, output, session){
   product_exclude_server("exclude_product_grocery",
                          r2,
                          reactive({data_grocery()$g_id}))
+  grocery_infobox_server("info_grocery", reactive({data_grocery()}))
   
   
   # Events
@@ -229,36 +226,6 @@ SERVER <- function(input, output, session){
         )
         
       )
-  })
-  
-  output$latest_purchase <- renderbs4InfoBox({
-    bs4InfoBox(
-      title = "Latest purchase data",
-      value = "06/06/2024",
-      subtitle = NULL,
-      icon = icon("calendar"),
-      width = 4
-    )
-  })
-  
-  output$count_of_purchases <- renderbs4InfoBox({
-    bs4InfoBox(
-      title = "Total of purchases",
-      value = 2,
-      subtitle = NULL,
-      icon = icon("wallet"),
-      width = 4
-    )
-  })
-  
-  output$added_products <- renderbs4InfoBox({
-    bs4InfoBox(
-      title = "Total of products",
-      value = 2,
-      subtitle = NULL,
-      icon = icon("cart-shopping"),
-      width = 4
-    )
   })
   
 }

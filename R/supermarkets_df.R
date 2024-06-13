@@ -1,6 +1,9 @@
+library(tibble)
+
 supermarkets <- tibble(
   supermarket_name = c("Lidl", "Tesco", "Link Brazil",
-                       "Homesavers", "Dealz", "Audi", "The Works",
+                       "Homesavers", "Dealz", "Aldi", "The Works",
                        "Polonez", "Boots", "Penneys", "Holland & Barrett",
-                       "Heng Hui Foods", "Card Factory")
+                       "Heng Hui Foods", "Card Factory", "B&Q",
+                       "EuroGiant")
 )
