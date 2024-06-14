@@ -90,7 +90,15 @@ BODY  = dashboardBody(
                  reactableOutput("grocery_table"))
              
              ),
-    tabItem( tabName = "analysis")
+    tabItem( tabName = "analysis",
+             h2("Grocery analysis"),
+             h4("Here is where the fun begins!"),
+             br(),
+             br(),
+             box(width = 12),
+             box(width = 12),
+             box(width = 12)
+             )
   )
 )
 
