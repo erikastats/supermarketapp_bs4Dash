@@ -157,7 +157,9 @@ SERVER <- function(input, output, session){
   product_server("add_product", r)
   product_exclude_server("exclude_product",
                          r2,
-                         reactive({data_p()$p_id}))
+                         reactive({data_p() |> 
+                             arrange(desc(last_update)) |> 
+                             pull(p_id)}))
   save_table_server("save_product_table", reactive({data_p()}),
                     "./Data/product_table.rds", "product")
   
@@ -166,7 +168,9 @@ SERVER <- function(input, output, session){
                     "./Data/grocery_table.rds", "grocery")
   product_exclude_server("exclude_product_grocery",
                          r2,
-                         reactive({data_grocery()$g_id}))
+                         reactive({data_grocery()|> 
+                             arrange(desc(last_update_grocery)) |> 
+                             pull(g_id)}))
   grocery_infobox_server("info_grocery", reactive({data_grocery()}))
   
   
