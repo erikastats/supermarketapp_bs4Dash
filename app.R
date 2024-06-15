@@ -95,7 +95,7 @@ BODY  = dashboardBody(
              h4("Here is where the fun begins!"),
              br(),
              br(),
-             box(width = 12),
+             analysis_geral_ui("general_ana"),
              box(width = 12),
              box(width = 12)
              )
@@ -180,7 +180,7 @@ SERVER <- function(input, output, session){
                              arrange(desc(last_update_grocery)) |> 
                              pull(g_id)}))
   grocery_infobox_server("info_grocery", reactive({data_grocery()}))
-  
+  analysis_geral_server("general_ana")
   
   # Events
   
