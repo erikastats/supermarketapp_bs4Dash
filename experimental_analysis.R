@@ -103,3 +103,7 @@ grocery |>
   e_heatmap(values, coord_system = "calendar") |> 
   e_visual_map(max = 30) |> 
   e_title("Calendar", "Heatmap")
+
+grocery |>
+  group_by(supermarket_name, grocery_day) |>
+  summarise(total_purchase = value_total)

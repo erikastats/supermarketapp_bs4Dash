@@ -180,7 +180,10 @@ SERVER <- function(input, output, session){
                              arrange(desc(last_update_grocery)) |> 
                              pull(g_id)}))
   grocery_infobox_server("info_grocery", reactive({data_grocery()}))
-  analysis_geral_server("general_ana")
+  analysis_geral_server("general_ana",
+                        reactive({data_grocery()}),
+                        reactive({data_p()})
+                        )
   
   # Events
   
