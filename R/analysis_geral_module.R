@@ -39,15 +39,15 @@ analysis_geral_ui <- function(id){
     hr(),
     br(),
       fluidRow(column(width = 3, 
-                      description_ui(ns("mean_this_year"))),
+                      bs4InfoBoxOutput(ns("mean_this_year"))),
              column(width = 3,
-                    description_ui(ns("product_most_consumed"))
+                    bs4InfoBoxOutput(ns("product_most_consumed"))
                     ),
              column(width = 3,
-                    description_ui(ns("mean_purchase"))
+                    bs4InfoBoxOutput(ns("mean_purchase"))
                     ),
              column(width = 3,
-                    description_ui(ns("times_grocery"))
+                    bs4InfoBoxOutput(ns("times_grocery"))
                     )
              ),
     hr(),
@@ -86,28 +86,78 @@ analysis_geral_server <- function(id, grocery_df, product_df){
                Year %in% input$choose_year)
     })
     
-    data_descrip <- reactiveValues({
-      data_grocery_filter() |>
-        filter
-    })
 
     # MODULE
     
-    description_server("mean_this_year", text_number = "17%",
-                       text_header = "$35,210.43",
-                       text_title = "PURCHASE 2024",
-                       arrow_icon = "up")
+    # description_server("mean_this_year", text_number = "17%",
+    #                    text_header = "$35,210.43",
+    #                    text_title = "PURCHASE 2024",
+    #                    arrow_icon = "up")
     
-    description_server("product_most_consumed", text_number = "17%",
-                       text_header = "$35,210.43",
-                       text_title = "pRODUCT MOST pURCHASED",
-                       arrow_icon = "up")
+    output$mean_this_year <- renderInfoBox({
+      value_number = data_grocery_filter() |>
+        filter(Year == 2024) |>
+        group_by(supermarket_name, grocery_day) |>
+        summarise(value_day = sum(value_total)) |>
+        ungroup() |>
+          summarise(avg_total = value_day |> 
+                      mean() |>
+                      round(2)) |>
+        pull(avg_total)
+        
+      bs4InfoBox(title = "Average purchase in 2024",
+              icon = icon("receipt"),
+              value = value_number
+                )
+    })
     
-    description_server("mean_purchase", text_number = "17%",
-                       text_header = "$35,210.43",
-                       text_title = "MEAN PURCHASE",
-                       arrow_icon = "up")
+    output$product_most_consumed <- renderInfoBox({
+      values_number = data_grocery_filter() |>
+        group_by(product_name) |>
+        summarise(count_product = product_quantity |> sum()) |>
+        ungroup() |>
+        filter(count_product == max(count_product))
+      
+      bs4InfoBox(title = "Most Consumed Product",
+              subtitle = values_number$product_name,
+              icon = icon("star"), 
+              value = values_number$count_product)
+      
+    })
+
+    output$mean_purchase <- renderbs4InfoBox({
+      values_number = data_grocery_filter() |>
+        mutate(Month = grocery_day |> month()) |>
+        group_by(Year, Month) |>
+        summarise(total_month = value_total |> sum(na.rm = TRUE)) |>
+        ungroup() |>
+        summarise(avg_total = total_month |> 
+                    mean() |>
+                    round(2)) |>
+        pull(avg_total)
+      
+      bs4InfoBox(title = "Average Monthly Purchase",
+              icon = icon("money-bill-alt"), 
+              value = values_number)
+      
+    })
     
+    output$times_grocery <- renderbs4InfoBox({
+      values_number = data_grocery_filter() |>
+        mutate(Month = grocery_day |> month()) |>
+        group_by(supermarket_name, grocery_day, Month, Year) |>
+        summarise(count_purchases = n()) |>
+        ungroup() |>
+        summarise(avg_purchases = count_purchases |> 
+                    mean() |>
+                    round()) |>
+        pull(avg_purchases)
+      
+      bs4InfoBox(title = "Average Monthly Purchase Quantity",
+                 icon = icon("clipboard-list"),
+                 value = values_number)
+      
+    })
     # Output: times_grocery
     description_server("times_grocery", text_number = "17%",
                        text_header = "$35,210.43",
@@ -147,6 +197,15 @@ analysis_geral_server <- function(id, grocery_df, product_df){
       values <- rnorm(length(dates), 20, 6)
       
       year <- data.frame(date = dates, values = values)
+      
+      grocery |> 
+        group_by(grocery_day) |> 
+        summarise(total_day = value_total) |> 
+        ungroup() |> 
+        mutate(Year = grocery_day |> Year()) |>
+        group_by(Year) |>
+        e_charts(grocery_day) |>
+        e_calendar()
       
       year %>% 
         mutate(year = format(date, "%Y")) %>% # get year from date
