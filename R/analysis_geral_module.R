@@ -17,54 +17,51 @@ supermarkets_choices <- sort(supermarkets$supermarket_name)
 analysis_geral_ui <- function(id){
   ns <- NS(id)
   tagList(
+    fluidRow(column(width = 6,
+                    uiOutput(ns("year_slider")) ),
+             column(width = 6,
+                    pickerInput(ns("choose_supermarket"),
+                                label = "Choose the supermarkets",
+                                choices = supermarkets_choices, 
+                                multiple = TRUE, selected = c("Lidl", "Tesco", "Aldi")))
+             ),
+    fluidRow(column(width = 3, 
+                    infoBoxOutput(ns("mean_this_year")) ),
+             column(width = 3,
+                    infoBoxOutput(ns("product_most_consumed"))
+             ),
+             column(width = 3,
+                    infoBoxOutput(ns("mean_purchase"))
+             ),
+             column(width = 3,
+                    infoBoxOutput(ns("times_grocery"))
+             )
+    ),
     fluidRow(
-      box(width = 3,
-          uiOutput(ns("year_slider")),
-            pickerInput(ns("choose_subcategory"),
-                        label = "Placeholder", 
-                        choices = c("a", "b", "c", "d"),
-                        options = list(
-                          title = "This is a placeholder")),
-            pickerInput(ns("choose_supermarket"),
-                        label = "Choose the supermarkets",
-                        choices = supermarkets_choices, 
-                        multiple = TRUE, selected = c("Lidl", "Tesco", "Aldi"))
-                    ),
              box(width = 6,
                  title = "Daily Grocery Shop Values by Supermarket Over Time",
                     echarts4rOutput(ns("graph_time"))),
-             box(width = 3,
+             box(width = 6,
                  title = "Total Expenditure by Product Category Across All Groceries",
-                    echarts4rOutput(ns("graph_category")))),
-    hr(),
-    br(),
-      fluidRow(column(width = 3, 
-                      bs4InfoBoxOutput(ns("mean_this_year"))),
-             column(width = 3,
-                    bs4InfoBoxOutput(ns("product_most_consumed"))
-                    ),
-             column(width = 3,
-                    bs4InfoBoxOutput(ns("mean_purchase"))
-                    ),
-             column(width = 3,
-                    bs4InfoBoxOutput(ns("times_grocery"))
-                    )
+                    echarts4rOutput(ns("graph_category")))
              ),
     hr(),
     br(),
     fluidRow( 
       uiOutput(ns("geral_super")),
       box( width = 6,
-           uiOutput(ns("git_days")))
-                    
-             )
+           uiOutput(ns("git_days")),
+           sidebar = boxSidebar(
+             startOpen = FALSE,
+             id = "year_calendar",
+             uiOutput(ns("year_calendar_input"))
+           )
+      )
+    )
   )
   
   
 }
-
-
-# Server module -----------------------------------------------------------
 
 # Server module -----------------------------------------------------------
 
@@ -72,27 +69,67 @@ analysis_geral_server <- function(id, grocery_df, product_df){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
-    # Reactive: data_grocery
+    # Reactive
+    
     data_grocery <- reactive({
-      grocery_df() %>%
+      grocery_df() |>
         left_join(product_df())
     })
     
-    # Reactive: data_grocery_filter
     data_grocery_filter <- reactive({
-      data_grocery() %>%
-        mutate(Year = year(grocery_day)) %>%
+      data_grocery() |>
+        mutate(Year = year(grocery_day)) |>
         filter(supermarket_name %in% input$choose_supermarket,
                Year %in% input$choose_year)
     })
     
-
-    # MODULE
+    years_grocery <- reactive({
+      data_grocery() |>
+        filter(supermarket_name %in% input$choose_supermarket) |>
+        mutate(Year = year(grocery_day)) |>
+        summarise(year_max = max(Year),
+                  year_min = min(Year))
+    })
     
-    # description_server("mean_this_year", text_number = "17%",
-    #                    text_header = "$35,210.43",
-    #                    text_title = "PURCHASE 2024",
-    #                    arrow_icon = "up")
+
+    # Module
+    
+    # Output
+    
+    output$year_slider <- renderUI({
+      
+      sliderInput(ns("choose_year"),
+                  label = "Select the Year Range",
+                  min = years_grocery()$year_min, 
+                  max = years_grocery()$year_max,
+                  value = c(years_grocery()$year_max - 1, years_grocery()$year_max),
+                  step = 1,
+                  sep = "")
+    })
+    
+    output$graph_time <- renderEcharts4r({
+      data_grocery_filter() |>
+        group_by(grocery_day, supermarket_name) |>
+        summarise(value_day = sum(value_total)) |>
+        ungroup() |>
+        group_by(supermarket_name) |>
+        e_charts(grocery_day) |>
+        e_line(value_day, symbol = "circle") |>
+        e_tooltip(trigger = "axis") |>
+        e_datazoom(type = "slider") |>
+        e_x_axis(type = "time") |>
+        e_legend(type = "scroll")
+    })
+    
+    output$graph_category <- renderEcharts4r({
+      data_grocery_filter() |>
+        group_by(product_category) |>
+        summarise(total_spent = sum(value_total)) |>
+        e_charts(product_category) |> 
+        e_pie(total_spent, radius = c("40%", "70%")) |>
+        e_tooltip(trigger = "item") |>
+        e_legend(show = FALSE)
+    })
     
     output$mean_this_year <- renderInfoBox({
       value_number = data_grocery_filter() |>
@@ -105,7 +142,7 @@ analysis_geral_server <- function(id, grocery_df, product_df){
                       round(2)) |>
         pull(avg_total)
         
-      bs4InfoBox(title = "Average purchase in 2024",
+      infoBox(title = "Average purchase",
               icon = icon("receipt"),
               value = value_number
                 )
@@ -118,14 +155,14 @@ analysis_geral_server <- function(id, grocery_df, product_df){
         ungroup() |>
         filter(count_product == max(count_product))
       
-      bs4InfoBox(title = "Most Consumed Product",
+      infoBox(title = "Most Consumed Product",
               subtitle = values_number$product_name,
               icon = icon("star"), 
               value = values_number$count_product)
       
     })
 
-    output$mean_purchase <- renderbs4InfoBox({
+    output$mean_purchase <- renderInfoBox({
       values_number = data_grocery_filter() |>
         mutate(Month = grocery_day |> month()) |>
         group_by(Year, Month) |>
@@ -136,13 +173,13 @@ analysis_geral_server <- function(id, grocery_df, product_df){
                     round(2)) |>
         pull(avg_total)
       
-      bs4InfoBox(title = "Average Monthly Purchase",
+      infoBox(title = "Average Monthly",
               icon = icon("money-bill-alt"), 
-              value = values_number)
+              value = values_number, width = NULL)
       
     })
     
-    output$times_grocery <- renderbs4InfoBox({
+    output$times_grocery <- renderInfoBox({
       values_number = data_grocery_filter() |>
         mutate(Month = grocery_day |> month()) |>
         group_by(supermarket_name, grocery_day, Month, Year) |>
@@ -153,16 +190,12 @@ analysis_geral_server <- function(id, grocery_df, product_df){
                     round()) |>
         pull(avg_purchases)
       
-      bs4InfoBox(title = "Average Monthly Purchase Quantity",
+      infoBox(title = "Average Monthly Purchase Quantity",
                  icon = icon("clipboard-list"),
                  value = values_number)
       
     })
-    # Output: times_grocery
-    description_server("times_grocery", text_number = "17%",
-                       text_header = "$35,210.43",
-                       text_title = "TIMES GROCERY",
-                       arrow_icon = "up")
+
 
     # Output: geral_super
     output$geral_super <- renderUI({
@@ -207,59 +240,37 @@ analysis_geral_server <- function(id, grocery_df, product_df){
         e_charts(grocery_day) |>
         e_calendar()
       
-      year %>% 
-        mutate(year = format(date, "%Y")) %>% # get year from date
-        group_by(year) %>% 
-        e_charts(date) %>% 
-        e_calendar(range = "2017",top="40") %>% 
-        e_calendar(range = "2018",top="260") %>% 
-        e_heatmap(values, coord_system = "calendar") %>% 
-        e_visual_map(max = 30) %>% 
-        e_title("Calendar", "Heatmap") %>%
+      year |> 
+        mutate(year = format(date, "%Y")) |> # get year from date
+        group_by(year) |> 
+        e_charts(date) |> 
+        e_calendar(range = "2017",top="40") |> 
+        e_calendar(range = "2018",top="260") |> 
+        e_heatmap(values, coord_system = "calendar") |> 
+        e_visual_map(max = 30) |> 
+        e_title("Calendar", "Heatmap") |>
         e_tooltip("item") 
     })
     
     # Output: year_slider
-    output$year_slider <- renderUI({
-      year_grocery <- data_grocery() %>%
-        filter(supermarket_name %in% input$choose_supermarket) %>%
-        mutate(Year = year(grocery_day)) %>%
-        summarise(year_max = max(Year),
-                  year_min = min(Year))
-      
-      sliderInput(ns("choose_year"),
-                  label = "Select the Year Range",
-                  min = year_grocery$year_min, 
-                  max = year_grocery$year_max,
-                  value = c(year_grocery$year_max - 1, year_grocery$year_max),
-                  step = 1,
-                  sep = "")
-    })
+
     
     # Output: graph_time
-    output$graph_time <- renderEcharts4r({
-      data_grocery_filter() %>%
-        group_by(grocery_day, supermarket_name) %>%
-        summarise(value_day = sum(value_total)) %>%
-        ungroup() %>%
-        group_by(supermarket_name) %>%
-        e_charts(grocery_day) %>%
-        e_line(value_day, symbol = "circle") %>%
-        e_tooltip(trigger = "axis") %>%
-        e_datazoom(type = "slider") %>%
-        e_x_axis(type = "time") %>%
-        e_legend(type = "scroll")
-    })
+    
     
     # Output: graph_category
-    output$graph_category <- renderEcharts4r({
-      data_grocery_filter() %>%
-        group_by(product_category) %>%
-        summarise(total_spent = sum(value_total)) %>%
-        e_charts(product_category) %>% 
-        e_pie(total_spent, radius = c("40%", "70%")) %>%
-        e_tooltip(trigger = "item") %>%
-        e_legend(show = FALSE)
+    
+    
+    output$year_calendar_input <- renderUI({
+      
+      
+      sliderInput(
+        "obs",
+        "Number of observations:",
+        min = 0,
+        max = 1000,
+        value = 500
+      )
     })
   })
 }
