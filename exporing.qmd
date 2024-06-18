@@ -1,0 +1,133 @@
+---
+title: "Exporatory analysis grocery"
+author: "Erika"
+format: html
+editor: visual
+---
+
+## About the data
+
+This is a study about the data collected from receipts of daily grocery shop in for a couple in Ireland. The main purpose of this analysis is to support the construction of an app that register and analyse this kind of data.
+
+```{r}
+#| echo: false
+#| include: false
+library(dplyr)
+library(readr)
+library(echarts4r)
+library(stringr)
+library(lubridate)
+
+grocery_table <- read_rds("./Data/grocery_table.rds")
+product_table <- read_rds("./Data/product_table.rds")
+
+grocery <-  grocery_table |>
+  left_join(product_table) |>
+  mutate(Year = grocery_day |> year(),
+         Month = grocery_day |> month())
+
+
+
+```
+
+### Grocery day
+
+Grocery days for each year
+
+```{r}
+#| message: false
+#| warning: false
+#| comment: false
+grocery_by_day <- grocery |>
+  group_by(grocery_day) |>
+  summarise(total_purchase = value_total |> 
+              sum(na.rm = TRUE)) 
+grocery_by_day |>
+  e_chart(grocery_day) |>
+  e_bar(total_purchase) |>  
+  e_title("Total purchase by date")
+  
+
+```
+
+Histogram purchase by day
+
+```{r}
+grocery_by_day |>
+  e_charts(total_purchase) |>
+  e_histogram(total_purchase, name = "Histogram") |>
+  e_density(total_purchase, name = "Density", areaStyle = list(opacity = .4), smooth = TRUE, y_index = 1) |>
+  e_tooltip(trigger = "axis")
+```
+
+Boxplot grocery by day
+
+```{r}
+ grocery_by_day |>
+   e_charts() |>
+   e_boxplot(total_purchase) |>
+  e_title("Distribution by day") |> 
+  e_tooltip(trigger = "axis" )
+   
+```
+
+Average value by purchase for each year
+
+```{r}
+grocery |>
+  group_by(grocery_day, Year) |>
+  summarise(total_purchase = value_total |> 
+              sum(na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(Year) |>
+  summarise(mean_purchase = total_purchase |> mean()) |>
+  ungroup() |>
+  mutate(Year = Year |> as.character()) |>
+  e_chart(Year) |>
+  e_bar(mean_purchase) |>
+  e_title("Mean purchase by Year") |> 
+  e_tooltip(trigger = "axis" )
+```
+
+Total spent by month and Year
+
+```{r}
+grocery |>
+  group_by(Year, Month) |>
+  summarise(total_grocery = value_total |> 
+              sum(na.rm = TRUE)) |>
+  group_by(Year) |>
+  e_charts(Month) |>
+  e_line(total_grocery) |>
+  e_title("Total spent in a month") |>
+  e_tooltip(trigger = "axis")
+  
+  
+```
+
+```{r}
+grocery |>
+  group_by(Year, Month) |>
+  summarise(total_grocery = value_total |> 
+              sum(na.rm = TRUE)) |>
+  group_by(Year) |>
+e_charts(Month) |>
+  e_bar(total_grocery) |>
+  e_title("Total spent in a month") |>
+  e_tooltip(trigger = "axis")
+```
+
+How often do groceries by month Year
+
+```{r}
+grocery |>
+  distinct(Year, Month, grocery_day) |>
+  group_by(Year, Month) |>
+  summarise(count_groceries = n()) |>
+  group_by(Year) |>
+  e_charts(Month) |>
+  e_bar(count_groceries) |>
+  e_title("Total groceries in a month") |>
+  e_tooltip(trigger = "axis")
+  
+```
