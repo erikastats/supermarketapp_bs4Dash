@@ -21,10 +21,18 @@ library(lubridate)
 grocery_table <- read_rds("./Data/grocery_table.rds")
 product_table <- read_rds("./Data/product_table.rds")
 
+week_of_month <- function(date) {
+  first_day <- floor_date(date, "month")
+  (day(date) + wday(first_day) - 1) %/% 7 + 1
+}
+
 grocery <-  grocery_table |>
   left_join(product_table) |>
   mutate(Year = grocery_day |> year(),
-         Month = grocery_day |> month())
+         Month = grocery_day |> month(),
+         Week_of_month = week_of_month(grocery_day),
+         Weekday = grocery_day |> wday()
+         )
 
 
 
@@ -69,6 +77,15 @@ Boxplot grocery by day
   e_title("Distribution by day") |> 
   e_tooltip(trigger = "axis" )
    
+```
+
+Value box grocery by month, Year
+
+```{r}
+grocery_by_day |>
+  mutate(Year = grocery_day |> year(),
+         Month = grocery_day |> month(),
+         year_month = )
 ```
 
 Average value by purchase for each year
@@ -130,4 +147,189 @@ grocery |>
   e_title("Total groceries in a month") |>
   e_tooltip(trigger = "axis")
   
+```
+
+Frequency of groceries by day of the week
+
+```{r}
+grocery |>
+  group_by(grocery_day, Weekday) |>
+  summarise(total_value = value_total |> sum(na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(Weekday) |>
+  summarise(frequency_weekday = n(),
+            avg_value = total_value |> mean()) |>
+  e_charts(Weekday) |>
+  e_bar(frequency_weekday, name = "Weekday frequency") |>
+  e_line(avg_value,name = "Average spent", y_index = 1) |>
+  e_title("Total groceries in a week") |>
+  e_tooltip(trigger = "axis")
+
+
+```
+
+Frequency by week number
+
+```{r}
+grocery |>
+  distinct(Year, Month, Week_of_month, grocery_day) |>
+  group_by(Year, Month, Week_of_month) |>
+  summarise(count_groceries = n()) |>
+  ungroup() |>
+  group_by(Year) |>
+  summarise(avg_count_groc = count_groceries |> mean())
+```
+
+```{r}
+grocery |>
+  distinct(Year, Month, Week_of_month, grocery_day) |>
+  group_by(Year, Month, Week_of_month) |>
+  summarise(count_groceries = n() ) |>
+            ungroup() |>
+  mutate(year_month = paste(Year, Month, Week_of_month, sep = "_")) |>
+    e_charts(year_month) |> 
+  e_line(count_groceries) |> 
+  e_title("Groceries per week")  |>
+  e_tooltip(trigger = "axis")
+  
+```
+
+frequency by week number
+
+```{r}
+grocery |>
+  distinct(Year, Month, Week_of_month, grocery_day) |>
+  group_by(Year, Month, Week_of_month) |>
+  summarise(count_groceries = n() ) |>
+  ungroup() |>
+  group_by(Week_of_month) |>
+  summarise(avg_week = count_groceries |> sum())  |> 
+  e_charts(Week_of_month) |> 
+  e_bar(avg_week) |> 
+  e_tooltip("axis")
+
+```
+
+```{r}
+grocery |>
+  distinct(Year, Month, Week_of_month, grocery_day) |>
+  group_by(Year, Month, Week_of_month) |>
+  summarise(count_groceries = n()) |>
+  ungroup() |>
+  group_by(Year, Week_of_month) |>
+  summarise(frequency_week_of_month = count_groceries |> sum())
+  
+```
+
+```{r}
+grocery |>
+  distinct(Year, Month, Week_of_month, grocery_day) |>
+  group_by(Year, Month, Week_of_month) |>
+  summarise(count_groceries = n()) |>
+  ungroup() |>
+  group_by(Year, Month) |>
+  summarise(avg_count_groceries_by_week = count_groceries |> mean()) |>
+  ungroup() |>
+  mutate(year_month = paste(Year, Month, sep = "_")) |>
+    e_charts(year_month) |> 
+  e_line(avg_count_groceries_by_week) |> 
+  e_title("Groceries per week")  |>
+  e_tooltip(trigger = "axis")
+```
+
+```{r}
+grocery |>
+  distinct(Year, Month, Week_of_month, grocery_day) |>
+  group_by(Year, Month, Week_of_month) |>
+  summarise(count_groceries = n()) |>
+  ungroup() |>
+  group_by(Year, Month) |>
+  summarise(count_groceries_by_month = count_groceries |> sum()) |>
+  ungroup() |>
+  mutate(year_month = paste(Year, Month, sep = "_")) |>
+    e_charts(year_month) |> 
+  e_line(count_groceries_by_month) |> 
+  e_title("Groceries per month")  |>
+  e_tooltip(trigger = "axis")
+```
+
+```{r}
+supermakets_choosen <- c('Tesco', 'Lidl', 'Aldi')
+
+grocery |>
+  filter(supermarket_name %in% supermakets_choosen) |>
+  distinct(Year, Month, Week_of_month, grocery_day) |>
+  group_by(Year, Month, Week_of_month) |>
+  summarise(count_groceries = n()) |>
+  ungroup() |>
+  group_by(Year, Month) |>
+  summarise(count_groceries_by_month = count_groceries |> sum()) |>
+  ungroup() |>
+  mutate(year_month = paste(Year, Month, sep = "_")) |>
+    e_charts(year_month) |> 
+  e_line(count_groceries_by_month) |> 
+  e_title("Groceries per month")  |>
+  e_tooltip(trigger = "axis")
+```
+
+Calendar groceries
+
+```{r}
+data_calendar <- grocery |>
+  group_by(grocery_day, Year) |>
+  summarise(grocery_value = value_total |> 
+              sum(na.rm = TRUE)) |>
+  arrange(grocery_day, Year)
+
+calendar_plot <- function(data, year_choose){
+  data2 = data |> 
+  filter(Year == year_choose)
+  
+  max_value = data2$grocery_value |> max()
+  
+  data2 |>
+  group_by(Year) |> 
+  e_charts(grocery_day) |> 
+  e_calendar(range = year_choose, top="40") |> 
+  e_heatmap(grocery_value, coord_system = "calendar") |> 
+  e_visual_map(max = max_value ) |> 
+  e_title("Calendar", "Heatmap")|>
+  e_tooltip(c("item", "axis")) 
+}
+
+calendar_plot(data_calendar, 2024)
+# calendar_plot(data_calendar, 2023) 
+```
+
+### Supermarket
+
+Value spent by supermarket
+
+```{r}
+supermakets_choosen <- c('Tesco', 'Lidl', 'Aldi')
+
+grocery |>
+  filter(supermarket_name %in% supermakets_choosen) |>
+  group_by(grocery_day, supermarket_name, Year) |>
+  summarise(grocery_value = value_total |> 
+              sum(na.rm =  TRUE)) |>
+  filter(grocery_value > 0) |>
+  group_by(supermarket_name) |>
+    e_charts(grocery_day) |> 
+  e_line(grocery_value) |> 
+  e_title("Groceries per supermarket")  |>
+  e_tooltip(trigger = "axis")
+```
+
+Average spent by supermarket by Year
+
+```{r}
+grocery |>
+  group_by(grocery_day, supermarket_name, Year) |>
+  summarise(grocery_value = value_total |> 
+              sum(na.rm =  TRUE)) |>
+  filter(grocery_value > 0) |>
+  ungroup() |>
+  group_by(supermarket_name, Year) |>
+  summarise(grocery_avg = grocery_value |> mean())
 ```
