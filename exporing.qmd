@@ -13,10 +13,12 @@ This is a study about the data collected from receipts of daily grocery shop in 
 #| echo: false
 #| include: false
 library(dplyr)
+library(tidyr)
 library(readr)
 library(echarts4r)
 library(stringr)
 library(lubridate)
+library(purrr)
 
 grocery_table <- read_rds("./Data/grocery_table.rds")
 product_table <- read_rds("./Data/product_table.rds")
@@ -324,12 +326,70 @@ grocery |>
 Average spent by supermarket by Year
 
 ```{r}
-grocery |>
+grocery_supermarket_grouped <- grocery |>
   group_by(grocery_day, supermarket_name, Year) |>
   summarise(grocery_value = value_total |> 
               sum(na.rm =  TRUE)) |>
   filter(grocery_value > 0) |>
   ungroup() |>
   group_by(supermarket_name, Year) |>
-  summarise(grocery_avg = grocery_value |> mean())
+  summarise(grocery_avg = grocery_value |> mean(),
+            grocery_total = grocery_value |> sum(),
+            grocery_min = grocery_value |> min(),
+            grocery_max = grocery_value |> max()) |>
+  arrange(desc(grocery_total))
+
+  grocery_supermarket_grouped |>
+  group_by(Year) |>
+   e_charts(supermarket_name) |> 
+  e_polar() |> 
+  e_angle_axis() |> 
+  e_radius_axis(supermarket_name) |> 
+  e_bar(grocery_avg, coord_system = "polar") |> 
+  e_scatter(grocery_avg, coord_system = "polar") |>
+    e_title("Groceries per supermarket average anual")  |>
+  e_tooltip(trigger = "axis")
+```
+
+```{r}
+grocery_supermarket_grouped |>
+  group_by(Year) |>
+    e_charts(supermarket_name) |> 
+ e_bar(grocery_total) |> 
+  e_title("Total yearly grocery by supermarket") |>
+  e_tooltip(trigger = "axis")
+```
+
+Value spent by supermarket monthly
+
+```{r}
+grocery_total_month_supermarket <- grocery |>
+  group_by(Year, Month, supermarket_name) |>
+  summarise(grocery_total = value_total |> sum(na.rm =  TRUE)) |>
+  filter(grocery_total >0) 
+
+grocery_sunburst  <- grocery_total_month_supermarket |>
+  ungroup() |>
+  nest(data = c(Month, supermarket_name, grocery_total)) |>
+  mutate(children = map(data, ~.x |>
+          nest(data = c(supermarket_name, grocery_total)
+               ) |>
+          mutate(children = map(data, ~.x |>
+                   rename(value = grocery_total) |>
+                   select(name = supermarket_name, value)
+                   )|>
+                             rename(name = Month) |>
+                               select(name, children)))) |>
+  select(name = Year, children)
+
+# Convert to list format required by echarts4r
+grocery_sunburst_list <-  e_list(grocery_sunburst)
+
+e_charts() |>
+  e_sunburst(
+    data = grocery_sunburst_list,
+    radius = c("10%", "90%"),
+    label = list(rotate = 'radial')
+  ) |>
+  e_title("Total Grocery Sales by Year, Month, and Supermarket")
 ```
