@@ -365,31 +365,95 @@ Value spent by supermarket monthly
 ```{r}
 grocery_total_month_supermarket <- grocery |>
   group_by(Year, Month, supermarket_name) |>
-  summarise(grocery_total = value_total |> sum(na.rm =  TRUE)) |>
+  summarise(grocery_total = value_total |>
+              sum(na.rm =  TRUE)) |>
   filter(grocery_total >0) 
 
-grocery_sunburst  <- grocery_total_month_supermarket |>
-  ungroup() |>
-  nest(data = c(Month, supermarket_name, grocery_total)) |>
-  mutate(children = map(data, ~.x |>
-          nest(data = c(supermarket_name, grocery_total)
-               ) |>
-          mutate(children = map(data, ~.x |>
-                   rename(value = grocery_total) |>
-                   select(name = supermarket_name, value)
-                   )|>
-                             rename(name = Month) |>
-                               select(name, children)))) |>
-  select(name = Year, children)
+polar_month_supermarket <- function(data, year, super){
+  df <- data|>
+    ungroup() |>
+    filter(Year == year, supermarket_name == super)
+  title = paste0(super, " - ", year) 
+  
+  df |>
+    e_charts(Month) |> 
+  e_polar() |> 
+  e_angle_axis(Month) |> # angle = x
+  e_radius_axis() |> 
+  e_bar(grocery_total, coord_system = "polar") |>
+     e_title(title)  |>
+  e_tooltip(trigger = "axis")
+    
+}
 
-# Convert to list format required by echarts4r
-grocery_sunburst_list <-  e_list(grocery_sunburst)
-
-e_charts() |>
-  e_sunburst(
-    data = grocery_sunburst_list,
-    radius = c("10%", "90%"),
-    label = list(rotate = 'radial')
-  ) |>
-  e_title("Total Grocery Sales by Year, Month, and Supermarket")
+polar_month_supermarket(grocery_total_month_supermarket,
+                        2023, "Tesco")
+  
 ```
+
+
+
+## Products
+
+Top Products by year
+
+```{r}
+
+grocery_category_group |>
+  mutate(Year = grocery_day |> year()) |>
+  group_by(product_category, Year) |>
+  summarise(grocery_total = total_day |> sum()) |>
+  group_by(Year) |>
+    e_charts(product_category) |> 
+  e_bar(grocery_total) |> 
+  e_title("Total product category")   |>
+  e_tooltip(trigger = "axis")
+
+
+```
+
+
+```{r}
+grocery_subcategory <- grocery_category_group |>
+  mutate(Year = grocery_day |> year()) |>
+  group_by(product_subcategory, Year) |>
+  summarise(grocery_total = total_day |> sum()) |>
+  arrange(Year, desc(grocery_total)) |>
+  ungroup() |>
+  group_by(Year) |>
+  mutate(ordergroup = grocery_total |> 
+           desc() |> 
+           order()) 
+
+
+  top10_subcategory <- function(data, year){
+    df = data |>
+      filter(Year == year) |>
+  filter(ordergroup < 11) 
+    
+      df |>
+      e_charts(product_subcategory) |> 
+        e_pie(grocery_total, roseType = "radius")  |>
+  e_tooltip(trigger = "item")
+  }
+  
+  top10_subcategory(grocery_subcategory, 2024)
+
+```
+
+Product that we most consumed
+
+```{r}
+
+grocery |>
+  group_by(product_name, Year) |>
+  summarise(grocery_total = value_total |> sum(na.rm = TRUE)) |>
+  ungroup() |>
+  group_by(Year) |>
+  mutate(order_grocery = grocery_total |> 
+           desc() |> 
+           order())
+
+```
+
+
